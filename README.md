@@ -21,7 +21,6 @@ et de produire des statistiques académiques telles que :
 ---
 
 ## 🗂️ Structure du projet
-```
 
 suivi-academique/
 │
@@ -37,7 +36,6 @@ suivi-academique/
 │
 └── README.md
 
-```
 
 ---
 
