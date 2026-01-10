@@ -11,7 +11,6 @@
  *  - Insert sample data
  *  - Create indexes
  *
- * ⚠️ DO NOT MODIFY STRUCTURE WITHOUT TEAM AGREEMENT
  ************************************************************/
 
 /* =========================
