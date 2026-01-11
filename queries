@@ -1,0 +1,294 @@
+/************************************************************
+ * Aggregations / KPI / Statistiques - Suivi académique
+ * DB: suivi_academique
+ * Collections: students, subjects, grades
+ * Champs (database_init.js):
+ * - grades: { studentId, subjectId, note, type: "control"|"exam", date }
+ * - subjects: { code, nom, semester, coefficient }
+ * - students: { cne, nom, prenom, filiere, niveau, groupe }
+ ************************************************************/
+
+const DB_NAME = "suivi_academique";
+const dbx = db.getSiblingDB(DB_NAME);
+
+const W_CONTROL = 0.4;
+const W_EXAM = 0.6;
+const HIST_BOUNDS = [0, 5, 10, 12, 14, 16, 18, 21];
+
+/** (A) Calcul note finale par (studentId, subjectId) */
+function finalNoteStage() {
+  return [
+    {
+      $group: {
+        _id: { studentId: "$studentId", subjectId: "$subjectId" },
+        controlRaw: { $max: { $cond: [{ $eq: ["$type", "control"] }, "$note", -1] } },
+        examRaw: { $max: { $cond: [{ $eq: ["$type", "exam"] }, "$note", -1] } }
+      }
+    },
+    {
+      $addFields: {
+        studentId: "$_id.studentId",
+        subjectId: "$_id.subjectId",
+        control: { $cond: [{ $gte: ["$controlRaw", 0] }, "$controlRaw", null] },
+        exam: { $cond: [{ $gte: ["$examRaw", 0] }, "$examRaw", null] }
+      }
+    },
+    {
+      $addFields: {
+        finalNote: {
+          $cond: [
+            { $and: [{ $ne: ["$control", null] }, { $ne: ["$exam", null] }] },
+            { $add: [{ $multiply: ["$control", W_CONTROL] }, { $multiply: ["$exam", W_EXAM] }] },
+            { $ifNull: ["$control", "$exam"] }
+          ]
+        }
+      }
+    },
+    { $project: { _id: 0, studentId: 1, subjectId: 1, control: 1, exam: 1, finalNote: 1 } }
+  ];
+}
+
+/** KPI 1: moyenne simple par étudiant + nb validées / non validées */
+function kpiAvgByStudent() {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    {
+      $group: {
+        _id: "$studentId",
+        avg: { $avg: "$finalNote" },
+        nbSubjects: { $sum: 1 },
+        passed: { $sum: { $cond: [{ $gte: ["$finalNote", 10] }, 1, 0] } },
+        failed: { $sum: { $cond: [{ $lt: ["$finalNote", 10] }, 1, 0] } }
+      }
+    },
+    { $lookup: { from: "students", localField: "_id", foreignField: "_id", as: "student" } },
+    { $unwind: "$student" },
+    {
+      $project: {
+        _id: 0, studentId: "$_id",
+        cne: "$student.cne", nom: "$student.nom", prenom: "$student.prenom",
+        filiere: "$student.filiere", niveau: "$student.niveau", groupe: "$student.groupe",
+        nbSubjects: 1, passed: 1, failed: 1,
+        avg: { $round: ["$avg", 2] }
+      }
+    },
+    { $sort: { avg: -1 } }
+  ]).toArray();
+}
+
+/** KPI 2: moyenne pondérée (coef matière) par étudiant */
+function kpiWeightedAvgByStudent() {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    { $lookup: { from: "subjects", localField: "subjectId", foreignField: "_id", as: "subject" } },
+    { $unwind: "$subject" },
+    {
+      $group: {
+        _id: "$studentId",
+        sumPoints: { $sum: { $multiply: ["$finalNote", "$subject.coefficient"] } },
+        sumCoef: { $sum: "$subject.coefficient" }
+      }
+    },
+    { $addFields: { weightedAvg: { $cond: [{ $eq: ["$sumCoef", 0] }, null, { $divide: ["$sumPoints", "$sumCoef"] }] } } },
+    { $lookup: { from: "students", localField: "_id", foreignField: "_id", as: "student" } },
+    { $unwind: "$student" },
+    {
+      $project: {
+        _id: 0,
+        cne: "$student.cne", nom: "$student.nom", prenom: "$student.prenom",
+        filiere: "$student.filiere", niveau: "$student.niveau", groupe: "$student.groupe",
+        weightedAvg: { $round: ["$weightedAvg", 2] }
+      }
+    },
+    { $sort: { weightedAvg: -1 } }
+  ]).toArray();
+}
+
+/** KPI 3: classement des étudiants (MongoDB 5+) */
+function kpiRankingStudents() {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    { $group: { _id: "$studentId", avg: { $avg: "$finalNote" } } },
+    { $setWindowFields: { sortBy: { avg: -1 }, output: { rank: { $rank: {} } } } },
+    { $lookup: { from: "students", localField: "_id", foreignField: "_id", as: "student" } },
+    { $unwind: "$student" },
+    {
+      $project: {
+        _id: 0, rank: 1,
+        cne: "$student.cne", nom: "$student.nom", prenom: "$student.prenom",
+        filiere: "$student.filiere", niveau: "$student.niveau", groupe: "$student.groupe",
+        avg: { $round: ["$avg", 2] }
+      }
+    }
+  ]).toArray();
+}
+
+/** KPI 4: stats par matière (avg/min/max/std) + taux réussite */
+function kpiStatsBySubject() {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    {
+      $group: {
+        _id: "$subjectId",
+        avg: { $avg: "$finalNote" },
+        min: { $min: "$finalNote" },
+        max: { $max: "$finalNote" },
+        std: { $stdDevPop: "$finalNote" },
+        count: { $sum: 1 },
+        passed: { $sum: { $cond: [{ $gte: ["$finalNote", 10] }, 1, 0] } }
+      }
+    },
+    {
+      $addFields: {
+        passRate: {
+          $cond: [{ $eq: ["$count", 0] }, 0, { $multiply: [{ $divide: ["$passed", "$count"] }, 100] }]
+        }
+      }
+    },
+    { $lookup: { from: "subjects", localField: "_id", foreignField: "_id", as: "subject" } },
+    { $unwind: "$subject" },
+    {
+      $project: {
+        _id: 0,
+        code: "$subject.code", nom: "$subject.nom", semester: "$subject.semester", coefficient: "$subject.coefficient",
+        count: 1,
+        avg: { $round: ["$avg", 2] }, min: 1, max: 1,
+        std: { $round: ["$std", 2] },
+        passRate: { $round: ["$passRate", 2] }
+      }
+    },
+    { $sort: { avg: -1 } }
+  ]).toArray();
+}
+
+/** KPI 5: taux réussite par dimension (filiere/groupe/niveau) */
+function kpiPassRateByDimension(dimensionField) {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+    { $unwind: "$student" },
+    {
+      $group: {
+        _id: `$student.${dimensionField}`,
+        avg: { $avg: "$finalNote" },
+        count: { $sum: 1 },
+        passed: { $sum: { $cond: [{ $gte: ["$finalNote", 10] }, 1, 0] } }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        [dimensionField]: "$_id",
+        count: 1,
+        avg: { $round: ["$avg", 2] },
+        passRate: {
+          $round: [
+            { $cond: [{ $eq: ["$count", 0] }, 0, { $multiply: [{ $divide: ["$passed", "$count"] }, 100] }] },
+            2
+          ]
+        }
+      }
+    },
+    { $sort: { passRate: -1, avg: -1 } }
+  ]).toArray();
+}
+
+/** KPI 6: top 5 / flop 5 par matière (via code matière) */
+function kpiTopBottomBySubjectCode(subjectCode) {
+  const subject = dbx.subjects.findOne({ code: subjectCode }, { _id: 1, code: 1, nom: 1 });
+  if (!subject) return { error: `Subject "${subjectCode}" not found` };
+
+  const base = [
+    ...finalNoteStage(),
+    { $match: { subjectId: subject._id } },
+    { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+    { $unwind: "$student" },
+    { $project: { _id: 0, cne: "$student.cne", nom: "$student.nom", prenom: "$student.prenom", finalNote: 1 } }
+  ];
+
+  return {
+    subject: { code: subject.code, nom: subject.nom },
+    top5: dbx.grades.aggregate([...base, { $sort: { finalNote: -1 } }, { $limit: 5 }]).toArray(),
+    flop5: dbx.grades.aggregate([...base, { $sort: { finalNote: 1 } }, { $limit: 5 }]).toArray()
+  };
+}
+
+/** KPI 7: histogramme notes finales par matière */
+function kpiHistogramBySubjectCode(subjectCode) {
+  const subject = dbx.subjects.findOne({ code: subjectCode }, { _id: 1, code: 1, nom: 1 });
+  if (!subject) return { error: `Subject "${subjectCode}" not found` };
+
+  return {
+    subject: { code: subject.code, nom: subject.nom },
+    bins: dbx.grades.aggregate([
+      ...finalNoteStage(),
+      { $match: { subjectId: subject._id } },
+      { $bucket: { groupBy: "$finalNote", boundaries: HIST_BOUNDS, default: "Other", output: { count: { $sum: 1 } } } }
+    ]).toArray()
+  };
+}
+
+/** KPI 8: KPI global */
+function kpiGlobal() {
+  return dbx.grades.aggregate([
+    ...finalNoteStage(),
+    {
+      $group: {
+        _id: null,
+        avgGlobal: { $avg: "$finalNote" },
+        count: { $sum: 1 },
+        passed: { $sum: { $cond: [{ $gte: ["$finalNote", 10] }, 1, 0] } }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        avgGlobal: { $round: ["$avgGlobal", 2] },
+        count: 1,
+        passRate: {
+          $round: [
+            { $cond: [{ $eq: ["$count", 0] }, 0, { $multiply: [{ $divide: ["$passed", "$count"] }, 100] }] },
+            2
+          ]
+        }
+      }
+    }
+  ]).toArray();
+}
+
+/* ---------------------- EXECUTION ---------------------- */
+print(`\n=== KPI / Aggregations on DB "${DB_NAME}" ===\n`);
+
+print("KPI1) Moyenne simple par étudiant:");
+printjson(kpiAvgByStudent());
+
+print("\nKPI2) Moyenne pondérée par étudiant:");
+printjson(kpiWeightedAvgByStudent());
+
+print("\nKPI3) Classement (MongoDB 5+):");
+try { printjson(kpiRankingStudents()); }
+catch (e) { print("⚠️ $setWindowFields nécessite MongoDB 5+."); }
+
+print("\nKPI4) Stats par matière:");
+printjson(kpiStatsBySubject());
+
+print("\nKPI5) Taux réussite par filière:");
+printjson(kpiPassRateByDimension("filiere"));
+
+print("\nKPI5b) Taux réussite par groupe:");
+printjson(kpiPassRateByDimension("groupe"));
+
+print("\nKPI5c) Taux réussite par niveau:");
+printjson(kpiPassRateByDimension("niveau"));
+
+print("\nKPI8) KPI Global:");
+printjson(kpiGlobal());
+
+// Exemples (choisir un code qui existe : BDN, JAVA, WEB...)
+/*
+print("\nKPI6) TOP/FLOP BDN:");
+printjson(kpiTopBottomBySubjectCode("BDN"));
+
+print("\nKPI7) Histogramme BDN:");
+printjson(kpiHistogramBySubjectCode("BDN"));
+*/
