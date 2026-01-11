@@ -19,7 +19,7 @@ export default function TeacherDashboard({ onLogout }) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/statistiques/enseignant');
+        const res = await api.get('/stats/subjects');
         setStats(res.data);
       } catch (err) {
         console.error(err);

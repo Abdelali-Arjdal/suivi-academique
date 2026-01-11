@@ -1,70 +1,228 @@
-# Getting Started with Create React App
+# Suivi académique des étudiants – MongoDB
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Projet réalisé dans le cadre du module **Base de Données NoSQL (MongoDB)**.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🎯 Objectif du projet
+Mettre en place une base de données MongoDB permettant de gérer :
+- les étudiants
+- les matières
+- les notes
 
-### `npm start`
+et de produire des statistiques académiques telles que :
+- moyenne par étudiant
+- moyenne par matière
+- note minimale et maximale
+- classement des étudiants
+- taux de réussite
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🗂️ Structure du projet
 
-### `npm test`
+```
+suivi-academique/
+│
+├── api/
+│   ├── index.js              # Express app pour Vercel serverless
+│   └── stats.routes.js       # Routes de statistiques
+│
+├── backend/
+│   ├── config/
+│   │   └── db.js            # Configuration MongoDB
+│   ├── models/              # Modèles Mongoose
+│   │   ├── Student.js
+│   │   ├── Subject.js
+│   │   └── Grade.js
+│   └── routes/              # Routes API
+│       ├── student.routes.js
+│       ├── subject.routes.js
+│       └── grade.routes.js
+│
+├── db/
+│   └── database_init.js      # Script mongosh : création + insertion des données
+│
+├── queries/
+│   └── Queries.js           # Requêtes MongoDB (statistiques)
+│
+├── public/                  # Fichiers statiques React
+├── src/                     # Code source React
+│   ├── components/
+│   │   ├── Login.js
+│   │   ├── StudentDashboard.js
+│   │   ├── TeacherDashboard.js
+│   │   └── AdminDashboard.js
+│   ├── services/
+│   │   └── api.js
+│   └── App.js
+│
+├── vercel.json              # Configuration Vercel
+├── package.json
+└── README.md
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🛠️ Technologies utilisées
+- MongoDB
+- Mongo Shell (mongosh)
+- Node.js & Express
+- React
+- Chart.js
+- Bootstrap
+- Vercel (deployment)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🧩 Base de données
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Nom de la base
+```
+suivi_academique
+```
 
-### `npm run eject`
+### Collections
+- `students`
+- `subjects`
+- `grades`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Relations
+- `grades.studentId` → `students._id`
+- `grades.subjectId` → `subjects._id`
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🚀 Installation locale
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 1️⃣ Prérequis
+- Node.js (v14+)
+- MongoDB (local ou Atlas)
 
-## Learn More
+### 2️⃣ Installation des dépendances
+```bash
+npm install
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 3️⃣ Configuration des variables d'environnement
+Créez un fichier `.env` à la racine :
+```env
+MONGO_URI=mongodb://localhost:27017/suivi_academique
+# Pour MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/suivi_academique
+PORT=5000
+REACT_APP_API_URL=http://localhost:5000/api
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 4️⃣ Initialiser la base de données
+```bash
+mongosh db/database_init.js
+```
 
-### Code Splitting
+Ce script :
+* crée la base de données
+* crée les collections
+* insère des données simulées
+* crée les index nécessaires
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### 5️⃣ Lancer l'application
 
-### Analyzing the Bundle Size
+**Mode développement (backend + frontend séparés):**
+```bash
+npm run dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Mode développement (frontend uniquement, si backend déjà lancé):**
+```bash
+npm start
+```
 
-### Making a Progressive Web App
+Le frontend sera accessible sur http://localhost:3000
+Le backend sera accessible sur http://localhost:5000
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 🚀 Déploiement sur Vercel
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### 1️⃣ Prérequis
+- Compte Vercel
+- MongoDB Atlas (recommandé pour la production)
 
-### Deployment
+### 2️⃣ Configuration Vercel
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+1. Connectez votre dépôt GitHub à Vercel
+2. Configurez les variables d'environnement dans Vercel :
+   - `MONGO_URI` : Votre chaîne de connexion MongoDB Atlas
+   - `REACT_APP_API_URL` : `/api` (par défaut)
 
-### `npm run build` fails to minify
+### 3️⃣ Déploiement
+```bash
+vercel
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Ou utilisez l'interface Vercel pour déployer depuis GitHub.
+
+### 4️⃣ Structure de déploiement
+- **Frontend React** : Build statique déployé sur Vercel
+- **API Express** : Serverless functions dans `/api`
+- **Routes API** : Accessibles via `/api/*`
+
+---
+
+## 📡 API Endpoints
+
+### Students
+- `GET /api/students` - Liste tous les étudiants
+- `GET /api/students/:id` - Détails d'un étudiant
+- `POST /api/students` - Créer un étudiant
+
+### Subjects
+- `GET /api/subjects` - Liste toutes les matières
+- `GET /api/subjects/:id` - Détails d'une matière
+- `POST /api/subjects` - Créer une matière
+
+### Grades
+- `GET /api/grades` - Liste toutes les notes
+- `GET /api/grades/:id` - Détails d'une note
+- `GET /api/grades/student/:studentId` - Notes d'un étudiant
+- `POST /api/grades` - Créer une note
+
+### Statistics
+- `GET /api/stats/subjects` - Statistiques par matière
+- `GET /api/stats/students` - Moyennes par étudiant
+- `GET /api/stats/rankings` - Classements par filière/niveau
+- `GET /api/stats/kpi` - KPIs globaux
+
+---
+
+## 👥 Fonctionnalités
+
+### Interface Étudiant
+- Consultation des notes personnelles
+- Visualisation de la moyenne générale
+- Graphiques de progression
+
+### Interface Enseignant
+- Statistiques par matière
+- Moyennes, min, max
+- Taux de réussite
+
+### Interface Administrateur
+- Gestion des étudiants
+- Gestion des matières
+- Consultation des notes
+- Statistiques globales
+
+---
+
+## 👨‍🎓 Auteurs
+
+Projet réalisé par un groupe de 4 étudiants.
+
+---
+
+## 📌 Notes
+
+- Le système d'authentification est simplifié pour la démo
+- En production, implémentez une authentification complète (JWT, etc.)
+- Utilisez MongoDB Atlas pour la production
+- Configurez CORS selon vos besoins
