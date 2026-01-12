@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -21,7 +21,7 @@ const Statistics = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setError(null);
       setLoading(true);
@@ -59,11 +59,11 @@ const Statistics = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchStats();
-  }, [user]);
+  }, [fetchStats]);
 
   if (loading) {
     return <LoadingSpinner message="Chargement des statistiques..." />;
@@ -193,4 +193,3 @@ const Statistics = ({ user }) => {
 };
 
 export default Statistics;
-

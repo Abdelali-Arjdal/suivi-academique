@@ -10,7 +10,8 @@
     "eject": "react-scripts eject",
     "server": "node backend/server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
-    "init-db": "node scripts/init-database.js"
+    "init-db": "node scripts/init-database.js",
+    "test-connection": "node scripts/test-connection.js"
   },
   "dependencies": {
     "@testing-library/dom": "^10.4.1",

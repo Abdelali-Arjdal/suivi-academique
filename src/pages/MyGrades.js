@@ -52,15 +52,7 @@ const MyGrades = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="container-fluid py-4">
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Chargement...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Chargement des notes..." />;
   }
 
   const chartData = {
@@ -84,6 +76,8 @@ const MyGrades = () => {
           <p className="text-muted">Consultation de vos notes et résultats</p>
         </div>
       </div>
+
+      {error && <ErrorMessage message={error} onRetry={fetchData} />}
 
       {student && (
         <div className="row mb-4">
@@ -182,4 +176,3 @@ const MyGrades = () => {
 };
 
 export default MyGrades;
-

@@ -1,228 +1,96 @@
-# Suivi académique des étudiants – MongoDB
+# Suivi Academique (MongoDB)
 
-Projet réalisé dans le cadre du module **Base de Données NoSQL (MongoDB)**.
+Academic tracking system for students, subjects, grades, and statistics. Built with React, Express, and MongoDB, and ready for Vercel.
 
----
+## Features
+- CRUD endpoints for students, subjects, and grades
+- Role-based UI (admin, teacher, student) with a demo login
+- Charts and KPI dashboards for academic stats
+- MongoDB initialization scripts for sample data
 
-## 🎯 Objectif du projet
-Mettre en place une base de données MongoDB permettant de gérer :
-- les étudiants
-- les matières
-- les notes
+## Tech Stack
+- React, React Router, Bootstrap, Chart.js
+- Node.js, Express, Mongoose
+- MongoDB (local or Atlas)
+- Vercel deployment
 
-et de produire des statistiques académiques telles que :
-- moyenne par étudiant
-- moyenne par matière
-- note minimale et maximale
-- classement des étudiants
-- taux de réussite
-
----
-
-## 🗂️ Structure du projet
-
-```
-suivi-academique/
-│
-├── api/
-│   ├── index.js              # Express app pour Vercel serverless
-│   └── stats.routes.js       # Routes de statistiques
-│
-├── backend/
-│   ├── config/
-│   │   └── db.js            # Configuration MongoDB
-│   ├── models/              # Modèles Mongoose
-│   │   ├── Student.js
-│   │   ├── Subject.js
-│   │   └── Grade.js
-│   └── routes/              # Routes API
-│       ├── student.routes.js
-│       ├── subject.routes.js
-│       └── grade.routes.js
-│
-├── db/
-│   └── database_init.js      # Script mongosh : création + insertion des données
-│
-├── queries/
-│   └── Queries.js           # Requêtes MongoDB (statistiques)
-│
-├── public/                  # Fichiers statiques React
-├── src/                     # Code source React
-│   ├── components/
-│   │   ├── Login.js
-│   │   ├── StudentDashboard.js
-│   │   ├── TeacherDashboard.js
-│   │   └── AdminDashboard.js
-│   ├── services/
-│   │   └── api.js
-│   └── App.js
-│
-├── vercel.json              # Configuration Vercel
-├── package.json
-└── README.md
-```
-
----
-
-## 🛠️ Technologies utilisées
-- MongoDB
-- Mongo Shell (mongosh)
-- Node.js & Express
-- React
-- Chart.js
-- Bootstrap
-- Vercel (deployment)
-
----
-
-## 🧩 Base de données
-
-### Nom de la base
-```
-suivi_academique
-```
-
-### Collections
-- `students`
-- `subjects`
-- `grades`
-
-### Relations
-- `grades.studentId` → `students._id`
-- `grades.subjectId` → `subjects._id`
-
----
-
-## 🚀 Installation locale
-
-### 1️⃣ Prérequis
-- Node.js (v14+)
-- MongoDB (local ou Atlas)
-
-### 2️⃣ Installation des dépendances
+## Quick Start
+1) Install dependencies
 ```bash
 npm install
 ```
 
-### 3️⃣ Configuration des variables d'environnement
-Créez un fichier `.env` à la racine :
-```env
-MONGO_URI=mongodb://localhost:27017/suivi_academique
-# Pour MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/suivi_academique
-PORT=5000
-REACT_APP_API_URL=http://localhost:5000/api
-```
-
-### 4️⃣ Initialiser la base de données
+2) Create your environment file
 ```bash
-mongosh db/database_init.js
+copy .env.example .env
 ```
 
-Ce script :
-* crée la base de données
-* crée les collections
-* insère des données simulées
-* crée les index nécessaires
+3) Initialize the database (optional sample data)
+```bash
+npm run init-db
+```
 
-### 5️⃣ Lancer l'application
-
-**Mode développement (backend + frontend séparés):**
+4) Run the app (API + React)
 ```bash
 npm run dev
 ```
 
-**Mode développement (frontend uniquement, si backend déjà lancé):**
-```bash
-npm start
+Frontend: http://localhost:3000
+API: http://localhost:5000
+
+## Scripts
+- `npm run dev`: start React + API with a single command
+- `npm run server`: start only the API (Express)
+- `npm start`: start only the React app
+- `npm run build`: production build for React
+- `npm run init-db`: seed the database with sample data
+- `npm run test-connection`: verify MongoDB connection and list collections
+
+## Demo Login
+The app uses a simple, demo-only login. Your role is inferred from the email:
+- `admin` in email -> admin
+- `teacher` or `enseignant` in email -> teacher
+- anything else -> student
+
+## Project Structure
+```
+api/                 Serverless entry for Vercel
+backend/             Express API for local dev
+  config/            Mongo connection
+  models/            Mongoose schemas
+  routes/            REST endpoints
+  server.js          Local API server
+  
+db/                  Mongo shell seed script
+queries/             MongoDB aggregation examples
+scripts/             Node-based DB helpers
+public/              React static assets
+src/                 React application
+vercel.json          Vercel config
 ```
 
-Le frontend sera accessible sur http://localhost:3000
-Le backend sera accessible sur http://localhost:5000
+## API Endpoints
+- `GET /api/health`
+- `GET /api/students`
+- `GET /api/students/:id`
+- `POST /api/students`
+- `GET /api/subjects`
+- `GET /api/subjects/:id`
+- `POST /api/subjects`
+- `GET /api/grades`
+- `GET /api/grades/:id`
+- `GET /api/grades/student/:studentId`
+- `POST /api/grades`
+- `GET /api/stats/subjects`
+- `GET /api/stats/students`
+- `GET /api/stats/rankings`
+- `GET /api/stats/kpi`
 
----
+## Deployment
+See `DEPLOYMENT.md` for Vercel setup and Atlas configuration.
 
-## 🚀 Déploiement sur Vercel
+## Contributing
+See `CONTRIBUTING.md` for workflow and guidelines.
 
-### 1️⃣ Prérequis
-- Compte Vercel
-- MongoDB Atlas (recommandé pour la production)
-
-### 2️⃣ Configuration Vercel
-
-1. Connectez votre dépôt GitHub à Vercel
-2. Configurez les variables d'environnement dans Vercel :
-   - `MONGO_URI` : Votre chaîne de connexion MongoDB Atlas
-   - `REACT_APP_API_URL` : `/api` (par défaut)
-
-### 3️⃣ Déploiement
-```bash
-vercel
-```
-
-Ou utilisez l'interface Vercel pour déployer depuis GitHub.
-
-### 4️⃣ Structure de déploiement
-- **Frontend React** : Build statique déployé sur Vercel
-- **API Express** : Serverless functions dans `/api`
-- **Routes API** : Accessibles via `/api/*`
-
----
-
-## 📡 API Endpoints
-
-### Students
-- `GET /api/students` - Liste tous les étudiants
-- `GET /api/students/:id` - Détails d'un étudiant
-- `POST /api/students` - Créer un étudiant
-
-### Subjects
-- `GET /api/subjects` - Liste toutes les matières
-- `GET /api/subjects/:id` - Détails d'une matière
-- `POST /api/subjects` - Créer une matière
-
-### Grades
-- `GET /api/grades` - Liste toutes les notes
-- `GET /api/grades/:id` - Détails d'une note
-- `GET /api/grades/student/:studentId` - Notes d'un étudiant
-- `POST /api/grades` - Créer une note
-
-### Statistics
-- `GET /api/stats/subjects` - Statistiques par matière
-- `GET /api/stats/students` - Moyennes par étudiant
-- `GET /api/stats/rankings` - Classements par filière/niveau
-- `GET /api/stats/kpi` - KPIs globaux
-
----
-
-## 👥 Fonctionnalités
-
-### Interface Étudiant
-- Consultation des notes personnelles
-- Visualisation de la moyenne générale
-- Graphiques de progression
-
-### Interface Enseignant
-- Statistiques par matière
-- Moyennes, min, max
-- Taux de réussite
-
-### Interface Administrateur
-- Gestion des étudiants
-- Gestion des matières
-- Consultation des notes
-- Statistiques globales
-
----
-
-## 👨‍🎓 Auteurs
-
-Projet réalisé par un groupe de 4 étudiants.
-
----
-
-## 📌 Notes
-
-- Le système d'authentification est simplifié pour la démo
-- En production, implémentez une authentification complète (JWT, etc.)
-- Utilisez MongoDB Atlas pour la production
-- Configurez CORS selon vos besoins
+## License
+MIT. See `LICENSE`.
