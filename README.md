@@ -1,128 +1,96 @@
-```md
-# Suivi académique des étudiants – MongoDB
+# Suivi Academique (MongoDB)
 
-Projet réalisé dans le cadre du module **Base de Données NoSQL (MongoDB)**.
+Academic tracking system for students, subjects, grades, and statistics. Built with React, Express, and MongoDB, and ready for Vercel.
 
----
+## Features
+- CRUD endpoints for students, subjects, and grades
+- Role-based UI (admin, teacher, student) with a demo login
+- Charts and KPI dashboards for academic stats
+- MongoDB initialization scripts for sample data
 
-## 🎯 Objectif du projet
-Mettre en place une base de données MongoDB permettant de gérer :
-- les étudiants
-- les matières
-- les notes
+## Tech Stack
+- React, React Router, Bootstrap, Chart.js
+- Node.js, Express, Mongoose
+- MongoDB (local or Atlas)
+- Vercel deployment
 
-et de produire des statistiques académiques telles que :
-- moyenne par étudiant
-- moyenne par matière
-- note minimale et maximale
-- classement des étudiants
-- taux de réussite
-
----
-
-## 🗂️ Structure du projet
-
-suivi-academique/
-│
-├── db/
-│   └── database_init.js      # Script mongosh : création + insertion des données
-│
-├── backend/                  # API (PHP / Node.js / Python)
-│
-├── frontend/                 # Interface utilisateur
-│
-├── queries/
-│   └── aggregations.js       # Requêtes MongoDB (statistiques)
-│
-└── README.md
-
-
----
-
-## 🛠️ Technologies utilisées
-- MongoDB
-- Mongo Shell (mongosh)
-- Git & GitHub
-- Backend : PHP / Node.js / Python
-- Frontend : React / Angular / HTML-CSS-JS
-
----
-
-## 🧩 Base de données
-
-### Nom de la base
-```
-
-suivi_academique
-
-````
-
-### Collections
-- `students`
-- `subjects`
-- `grades`
-
-### Relations
-- `grades.studentId` → `students._id`
-- `grades.subjectId` → `subjects._id`
-
-⚠️ Les noms des collections et des champs ne doivent pas être modifiés sans accord du groupe.
-
----
-
-## 🚀 Installation rapide (local)
-
-### 1️⃣ Lancer MongoDB
-Assurez-vous que MongoDB est démarré (local ou Atlas).
-
-### 2️⃣ Initialiser la base de données
+## Quick Start
+1) Install dependencies
 ```bash
-mongosh db/database_init.js
-````
+npm install
+```
 
-Ce script :
-
-* crée la base de données
-* crée les collections
-* insère des données simulées
-* crée les index nécessaires
-
----
-
-## 👥 Travail en équipe
-
-* Chaque membre travaille dans son dossier uniquement :
-
-  * Base de données → `db/`
-  * Backend → `backend/`
-  * Frontend → `frontend/`
-  * Requêtes → `queries/`
-* Toujours exécuter :
-
+2) Create your environment file
 ```bash
-git pull
+copy .env.example .env
 ```
 
-avant de commencer à travailler.
-
-* Les modifications de la structure MongoDB passent obligatoirement par le responsable base de données.
-
----
-
-## 👨‍🎓 Auteurs
-
-Projet réalisé par un groupe de 4 étudiants.
-
----
-
-## 📌 Remarque
-
-Ce projet respecte le cycle de vie classique d’un logiciel :
-
-* analyse
-* conception
-* implémentation
-* tests
-
+3) Initialize the database (optional sample data)
+```bash
+npm run init-db
 ```
+
+4) Run the app (API + React)
+```bash
+npm run dev
 ```
+
+Frontend: http://localhost:3000
+API: http://localhost:5000
+
+## Scripts
+- `npm run dev`: start React + API with a single command
+- `npm run server`: start only the API (Express)
+- `npm start`: start only the React app
+- `npm run build`: production build for React
+- `npm run init-db`: seed the database with sample data
+- `npm run test-connection`: verify MongoDB connection and list collections
+
+## Demo Login
+The app uses a simple, demo-only login. Your role is inferred from the email:
+- `admin` in email -> admin
+- `teacher` or `enseignant` in email -> teacher
+- anything else -> student
+
+## Project Structure
+```
+api/                 Serverless entry for Vercel
+backend/             Express API for local dev
+  config/            Mongo connection
+  models/            Mongoose schemas
+  routes/            REST endpoints
+  server.js          Local API server
+  
+db/                  Mongo shell seed script
+queries/             MongoDB aggregation examples
+scripts/             Node-based DB helpers
+public/              React static assets
+src/                 React application
+vercel.json          Vercel config
+```
+
+## API Endpoints
+- `GET /api/health`
+- `GET /api/students`
+- `GET /api/students/:id`
+- `POST /api/students`
+- `GET /api/subjects`
+- `GET /api/subjects/:id`
+- `POST /api/subjects`
+- `GET /api/grades`
+- `GET /api/grades/:id`
+- `GET /api/grades/student/:studentId`
+- `POST /api/grades`
+- `GET /api/stats/subjects`
+- `GET /api/stats/students`
+- `GET /api/stats/rankings`
+- `GET /api/stats/kpi`
+
+## Deployment
+See `DEPLOYMENT.md` for Vercel setup and Atlas configuration.
+
+## Contributing
+See `CONTRIBUTING.md` for workflow and guidelines.
+
+## License
+MIT. See `LICENSE`.
