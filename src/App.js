@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import StudentDashboard from './components/StudentDashboard';
-import TeacherDashboard from './components/TeacherDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import Navbar from './components/Layout/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
+import Dashboard from './pages/Dashboard';
+import Students from './pages/Students';
+import Subjects from './pages/Subjects';
+import Grades from './pages/Grades';
+import Statistics from './pages/Statistics';
+import MyGrades from './pages/MyGrades';
+import NotFound from './pages/NotFound';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -28,25 +34,91 @@ function App() {
     setUser(null);
   };
 
+  const ProtectedRoute = ({ children, allowedRoles }) => {
+    if (!user) return <Navigate to="/login" />;
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      return <Navigate to="/" />;
+    }
+    return (
+      <>
+        <Navbar user={user} onLogout={handleLogout} />
+        {children}
+      </>
+    );
+  };
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+        <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
+        
         <Route
-          path="/student"
-          element={user?.role === 'etudiant' ? <StudentDashboard onLogout={handleLogout} /> : <Navigate to="/login" />}
+          path="/"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'enseignant', 'etudiant']}>
+              <Dashboard user={user} />
+            </ProtectedRoute>
+          }
         />
+        
         <Route
-          path="/teacher"
-          element={user?.role === 'enseignant' ? <TeacherDashboard onLogout={handleLogout} /> : <Navigate to="/login" />}
+          path="/students"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Students />
+            </ProtectedRoute>
+          }
         />
+        
         <Route
-          path="/admin"
-          element={user?.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> : <Navigate to="/login" />}
+          path="/subjects"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Subjects />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/" element={<Navigate to="/login" />} />
-      </Routes>
-    </Router>
+        
+        <Route
+          path="/grades"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Grades />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/statistics"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'enseignant', 'etudiant']}>
+              <Statistics user={user} />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/my-grades"
+          element={
+            <ProtectedRoute allowedRoles={['etudiant']}>
+              <MyGrades />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="*"
+          element={
+            <>
+              <Navbar user={user} onLogout={handleLogout} />
+              <NotFound />
+            </>
+          }
+        />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
